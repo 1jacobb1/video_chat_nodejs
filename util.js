@@ -37,7 +37,7 @@ module.exports = {
 		if (typeof message === 'undefined' || message.length === 0) {
 			return false;
 		}
-		
+
 		/* log the error */
 		return this.log("[ERROR] " + message, 'red', 'white');
 	},
@@ -58,11 +58,11 @@ module.exports = {
 	* display active rooms
 	*/
 	outputRooms: function(rooms){
-		var elem = this;
-		var arr = [];
-		rooms.map(function(element, index){
-			arr.push(element.room);
-		});
-		elem.log('[ROOMS] -> '+ JSON.stringify(arr), 'magenta');
+		// var elem = this;
+		// var arr = [];
+		// rooms.map(function(element, index){
+		// 	arr.push(element.room);
+		// });
+		// elem.log('[ROOMS] -> '+ JSON.stringify(arr), 'magenta');
 	},
 };

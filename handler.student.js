@@ -12,25 +12,29 @@ module.exports = {
 		}
 
 		var data = obj.data;
-		var chatRoomIdx = util.getIndex(connect.chatRooms, {room: data.chatHash});
-		util.log('[REGISTER_STUDENT] CHECKING IF ROOM EXISTS -> '+chatRoomIdx, 'yellow');
 
-		if (chatRoomIdx <= -1){
+		util.log('[REGISTER_STUDENT] CHECKING IF ROOM EXISTS -> '+data.chatHash, 'yellow');
+
+		if (typeof data.chatHash === 'undefined'){
 			return rej('handler_student_no_room');
 		}
 
-		if (typeof connect.chatRooms[chatRoomIdx].user !== "undefined" && connect.chatRooms[chatRoomIdx].user !== null){
+		if (typeof connect.chatRooms[data.chatHash] === 'undefined') {
+			return rej('handler_student_room_does_not_exists');
+		}
+
+		if (typeof connect.chatRooms[data.chatHash].user !== "undefined" && connect.chatRooms[data.chatHash].user !== null){
 			return rej('handler_student_room_already_occupied');
 		}
 
 		// insert student to the room
-		connect.chatRooms[chatRoomIdx].user = data.userId;
-		connect.chatRooms[chatRoomIdx].studentDisconnect = false;
+		connect.chatRooms[data.chatHash].user = parseInt(data.userId);
+		connect.chatRooms[data.chatHash].studentDisconnect = false;
 		util.log('[REGISTER_STUDENT] STUDENT DONE INSERTING TO ROOM', 'green');
 
-		if (typeof connect.chatRooms[chatRoomIdx].start === "undefined" || connect.chatRooms[chatRoomIdx].start === ""){
+		if (typeof connect.chatRooms[data.chatHash].start === "undefined" || connect.chatRooms[data.chatHash].start === ""){
 			util.log('[REGISTER_STUDENT] INSERTING START DATE', 'green');
-			connect.chatRooms[chatRoomIdx].start = util.currentTime();
+			connect.chatRooms[data.chatHash].start = util.currentTime();
 		}
 
 		return res();
@@ -44,20 +48,18 @@ module.exports = {
 		var data = obj.data;
 		var elem = this;
 
+		util.log("[STUDENT_LEAVE_ROOM] CHECK IF ROOM EXISTS INDEX -> "+data.chatHash);
 
-		var chatRoomIdx = util.getIndex(connect.chatRooms, {room: data.chatHash});
-		util.log("[STUDENT_LEAVE_ROOM] CHECK IF ROOM EXISTS INDEX -> "+chatRoomIdx);
-
-		if (chatRoomIdx > -1){
-			connect.chatRooms[chatRoomIdx].user = null;
+		if (typeof connect.chatRooms[data.chatHash] !== 'undefined'){
+			connect.chatRooms[data.chatHash].user = null;
 			util.log("[STUDENT_LEAVE_ROOM] REMOVING STUDENT FROM ROOM");
 		}
 
-		if (chatRoomIdx > -1 && 
-			typeof connect.chatRooms[chatRoomIdx].studentDisconnect !== "undefined" &&
-			connect.chatRooms[chatRoomIdx].studentDisconnect === false &&
+		if ( typeof connect.chatRooms[data.chatHash] !== 'undefined' &&
+			typeof connect.chatRooms[data.chatHash].studentDisconnect !== "undefined" &&
+			connect.chatRooms[data.chatHash].studentDisconnect === false &&
 			disconnection !== "client namespace disconnect") {
-			connect.chatRooms[chatRoomIdx].studentDisconnect = setTimeout(function(){
+			connect.chatRooms[data.chatHash].studentDisconnect = setTimeout(function(){
 				util.try(function(res, rej){
 					if (typeof elem.disconnectStudent === "function") { elem.disconnectStudent(obj,res,rej); }
 				});
@@ -72,10 +74,8 @@ module.exports = {
 
 		var data = obj.data;
 
-
-		var chatRoomIdx = util.getIndex(connect.chatRooms, {room: data.chatHash});
-		if (chatRoomIdx > -1){
-			delete connect.chatRooms[chatRoomIdx];
+		if (typeof connect.chatRooms[data.chatHash] !== 'undefined'){
+			delete connect.chatRooms[data.chatHash];
 			util.log("[DISCONNECT_STUDENT] REMOVING STUDENT FROM ROOM");
 		}
 

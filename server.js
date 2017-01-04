@@ -51,9 +51,6 @@ connect.io.on('connection', function(socket){
 
 		})
 		.then(function(){
-			// clean chat rooms
-			connect.chatRooms = util.compact(connect.chatRooms);
-
 			// set socket information
 			socket.userData = data;
 
@@ -97,10 +94,13 @@ connect.io.on('connection', function(socket){
 			switch(command){
 				case "sendChat":
 					resolve();
+				case "startLesson":
+
+					break;
 				default:
 					resolve();
 			}
-			
+
 		})
 		.then(function(response){
 			connect.chatRooms = util.compact(connect.chatRooms);
@@ -133,7 +133,6 @@ connect.io.on('connection', function(socket){
 
 	socket.on('disconnect', function(action){
 		util.log('[DISCONNECTION] SOCKET ID: '+ socket.id + ' ACTION -> '+action, 'red');
-		util.log('[DISCONNECTION] USER DATA: '+ JSON.stringify(socket.userData), 'red');
 
 		var command = "lessonDisconnect";
 		var userData = typeof socket.userData !== 'undefined' ? socket.userData : null;
@@ -142,6 +141,8 @@ connect.io.on('connection', function(socket){
 			util.log('[DISCONNECTION] USER DATA EMPTY', 'red');
 			return false;
 		}
+
+		util.log('[DISCONNECTION] USER DATA: '+ JSON.stringify(socket.userData), 'red');
 
 		util.try(function(resolve, reject){
 			var memberType = (typeof userData.memberType === 'undefined') ? 'unknown' : userData.memberType;
@@ -153,7 +154,6 @@ connect.io.on('connection', function(socket){
 					data: userData
 				}, connect.io, action);
 			} else if (memberType === "student") {
-				console.log("jacob");
 				handler.student.studentLeaveRoom({
 					data: userData
 				}, connect.io, action);
@@ -172,9 +172,6 @@ connect.io.on('connection', function(socket){
 			return resolve(command);
 		})
 		.then(function(command){
-			// clean chat rooms
-			connect.chatRooms = util.compact(connect.chatRooms);
-
 			// output active rooms
 			util.outputRooms(connect.chatRooms);
 		})

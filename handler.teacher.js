@@ -12,31 +12,30 @@ module.exports = {
 
 		var data = obj.data;
 
-		var chatRoomIdx = util.getIndex(connect.chatRooms, {room: data.chatHash});
-		util.log('[TEACHER_CONNECT] CHECK IF ROOM ALREADY EXISTS, INDEX -> '+chatRoomIdx, 'yellow');
-
-		if (chatRoomIdx <= -1){
-			util.log('[TEACHER_CONNECT] ADDING NEW ROOM');
-			connect.chatRooms.push({
+		if(typeof connect.chatRooms[data.chatHash] === 'undefined') {
+			connect.chatRooms[data.chatHash] = {
 				room: data.chatHash,
-				teacher: parseInt(data.teacherId),
 				created: util.currentTime(),
+				start: '',
+				user: data.studentId == 0 ? null : parseInt(data.studentId),
+				teacher: parseInt(data.teacherId),
+				studentDisconnect: false,
 				teacherDisconnect: false
-			});
+			};
 		} else {
-			if (typeof connect.chatRooms[chatRoomIdx].teacher !== 'undefined' && connect.chatRooms[chatRoomIdx].teacher !== null){
-				util.log('[TEACHER_CONNECT] ROOM ALREADY OCCUPIED', 'red');
-				return reject('room_already_occupied');
-			}
+			if (typeof connect.chatRooms[data.chatHash].teacher !== 'undefined' && connect.chatRooms[data.chatHash].teacher !== null){
+					util.log('[TEACHER_CONNECT] ROOM ALREADY OCCUPIED', 'red');
+					return reject('room_already_occupied');
+				}
 
-			if (typeof connect.chatRooms[chatRoomIdx].teacherDisconnect !== 'undefined' && connect.chatRooms[chatRoomIdx].teacherDisconnect !== null){
-				clearTimeout(connect.chatRooms[chatRoomIdx].teacherDisconnect);
-				util.log('[TEACHER_CONNECT] CLEAR TIMEOUT FOR TEACHER DISCONNECTION', 'green');
-			}
+				if (typeof connect.chatRooms[data.chatHash].teacherDisconnect !== 'undefined' && connect.chatRooms[data.chatHash].teacherDisconnect !== null){
+					clearTimeout(connect.chatRooms[data.chatHash].teacherDisconnect);
+					util.log('[TEACHER_CONNECT] CLEAR TIMEOUT FOR TEACHER DISCONNECTION', 'green');
+				}
 
-			connect.chatRooms[chatRoomIdx].teacher = parseInt(data.teacherId);
-			connect.chatRooms[chatRoomIdx].teacherDisconnect = false;
-			util.log('[TEACHER_CONNECT] APPLIED TEACHER INDEX', 'green');
+				connect.chatRooms[data.chatHash].teacher = parseInt(data.teacherId);
+				connect.chatRooms[data.chatHash].teacherDisconnect = false;
+				util.log('[TEACHER_CONNECT] APPLIED TEACHER INDEX', 'green');
 		}
 
 		model.updateLessonOnAir(
@@ -58,34 +57,32 @@ module.exports = {
 		if (typeof obj.data === undefined){
 			return reject('handler_teacher_invalid_teacher_leave_room_params');
 		}
-console.log(connect.chatRooms);
+
 		var data = obj.data;
 		var element = this;
 
-		var chatRoomIdx = util.getIndex(connect.chatRooms, {room: data.chatHash});
-		util.log('[TEACHER_LEAVE_ROOM] CHECK IF ROOM IS EXISTING INDEX -> '+chatRoomIdx, 'yellow');
+		util.log('[TEACHER_LEAVE_ROOM] CHECK IF ROOM IS EXISTING INDEX -> '+data.chatHash, 'yellow');
 
-		if (chatRoomIdx > -1){
+		if (typeof connect.chatRooms[data.chatHash] !== 'undefined'){
 			util.log('[TEACHER_LEAVE_ROOM] REMOVE TEACHER FROM ROOM');
-			connect.chatRooms[chatRoomIdx].teacher = null;
+			connect.chatRooms[data.chatHash].teacher = null;
 		}
 
-		if (chatRoomIdx > -1 &&
-			typeof connect.chatRooms[chatRoomIdx].teacherDisconnect !== "undefined" &&
-			connect.chatRooms[chatRoomIdx].teacherDisconnect === false &&
-			disconnection !== "client namespace disconnect"
+		if( typeof connect.chatRooms[data.chatHash] !== 'undefined' &&
+			typeof connect.chatRooms[data.chatHash].teacherDisconnect !== 'undefined' &&
+			connect.chatRooms[data.chatHash].teacherDisconnect === false &&
+			disconnection !== 'client namespace disconnect'
 		) {
-			util.log('[TEACHER_LEAVE_ROOM] SETTNG TIMEOUT FOR TEACHER DISCONNECTION -> '+connect.chatRooms[chatRoomIdx].teacherDisconnect, 'yellow');
-			
+			util.log('[TEACHER_LEAVE_ROOM] SETTNG TIMEOUT FOR TEACHER DISCONNECTION -> '+connect.chatRooms[data.chatHash].teacherDisconnect, 'yellow');
+
 			/* declare timeout disconnection */
-			connect.chatRooms[chatRoomIdx].teacherDisconnect = setTimeout(function(){
+			connect.chatRooms[data.chatHash].teacherDisconnect = setTimeout(function(){
 
 				/* attempt automatic disconnection of teacher */
 				util.try(function(resolve, reject){
 					if (typeof element.disconnectTeacher === 'function') { element.disconnectTeacher(obj,resolve,reject); }
 				})
 				.then(function(){
-					console.log(connect.chatRooms);
 					return socket.in(data.chatHash).emit('room.generalCommand', {command: constant.disconnect.teacher.timeOut, content: data});
 				})
 				.catch(function(err){
@@ -104,9 +101,7 @@ console.log(connect.chatRooms);
 		var data = obj.data;
 
 		util.log('[TEACHER_DISCONNECTION] DISCONNECTING TEACHER -> '+JSON.stringify(data), 'red');
-
-		var chatRoomIdx = util.getIndex(connect.chatRooms, {room: data.chatHash});
-		util.log('[TEACHER_DISCONNECTION] CHECK IF ROOM EXISTS -> '+chatRoomIdx, 'yellow');
+		util.log('[TEACHER_DISCONNECTION] CHECK IF ROOM EXISTS -> '+data.chatHash, 'yellow');
 
 		model.updateLessonOnAir(
 			{status: 0, connect_flag:0},
@@ -116,8 +111,8 @@ console.log(connect.chatRooms);
 		)
 		.then(function(){
 
-			if (chatRoomIdx > -1) {
-				delete connect.chatRooms[chatRoomIdx];
+			if (typeof connect.chatRooms[data.chatHash] !== 'undefined') {
+				delete connect.chatRooms[data.chatHash];
 				util.log('[TEACHER_DISCONNECTION] REMOVING TEACHER FROM ROOM -> '+data.chatHash, 'red');
 			}
 

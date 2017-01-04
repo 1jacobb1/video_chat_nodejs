@@ -31,12 +31,17 @@ exports.admins = [];
 exports._ = _;
 exports.util = util;
 exports.constant = constant;
-exports.chatRooms = [{
-	room: '',
-	created: '',
-	start:'',
-	user: null, 
-	teacher: null,
-	studentDisconnect: false,
-	teacherDisconnect: false
-}];
+exports.chatRooms = [];
+
+/* example format */
+/*exports.chatRooms = {
+	'sample' : {
+		room: '',
+		created: '',
+		start:'',
+		user: null,
+		teacher: null,
+		studentDisconnect: false,
+		teacherDisconnect: false
+	}
+};*/
