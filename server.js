@@ -1,5 +1,6 @@
 var connect = require('./connect.js'),
 	handler = require('./handler.js'),
+	videoAudioRecorder = require('./videoAudioRecorder.js'),
 	util 	= connect.util,
 	constant = connect.constant;
 
@@ -129,7 +130,18 @@ connect.io.on('connection', function(socket){
 		});
 
 	});
-
+	
+	socket.on('record.saveRecord', function(data) {
+		if (typeof data.video !== 'undefined') {
+			/* used video recording without chunking */
+			// videoAudioRecorder.writeToDisk(data.video.dataURL, data.video.name + '.webm');
+			
+			videoAudioRecorder.chunkingWriteToDisk(data);
+			
+			/* merging two file example */
+			// videoAudioRecorder.mergeFiles(data);
+		}
+	});
 
 	socket.on('disconnect', function(action){
 		util.log('[DISCONNECTION] SOCKET ID: '+ socket.id + ' ACTION -> '+action, 'red');
